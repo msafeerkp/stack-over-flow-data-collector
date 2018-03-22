@@ -21,14 +21,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stackoverflow.data.collector.config.KafkaConfig;
 import org.stackoverflow.data.collector.mapper.PostMetaModelMapper;
-import org.stackoverflow.data.collector.model.PostMetaModel;
+import org.stackoverflow.data.collector.model.MetaModel;
 import org.stackoverflow.data.collector.utils.CollectorConfigUtil;
 
 public class PostMetaManagerTask implements Runnable{
 
-	private KafkaProducer<String, String> postMetaProducer;
-	private KafkaConsumer<String, String> postMetaConsumer;
+	private KafkaProducer<String, String> metaProducer;
+	private KafkaConsumer<String, String> metaConsumer;
 	private String metaTopicName;
+	private String[] metaTypes= {"ANSWER", "QUESTION", "COMMENT", "TAG", "USER"};
 	
 	Logger log = LoggerFactory.getLogger(this.getClass());
 	
@@ -37,20 +38,20 @@ public class PostMetaManagerTask implements Runnable{
 		try {
 			
 			this.metaTopicName = metaTopicName;
-			postMetaProducer = new KafkaProducer<>(KafkaConfig.getProducerConfig());
-			log.info("Post Meta Producer created.");
+			metaProducer = new KafkaProducer<>(KafkaConfig.getProducerConfig());
+			log.info("Meta Producer created.");
 			Map<String, Object> config = KafkaConfig.getConsumerConfig();
 			config.put(ConsumerConfig.GROUP_ID_CONFIG, this.getClass().getName() + " _" + this.hashCode());
-			postMetaConsumer = new KafkaConsumer<>(config);
-			log.info("Post Meta Consumer created.");		
-			postMetaConsumer.subscribe(Arrays.asList(metaTopicName));
-			log.info("Post Meta Consumer subscrbed for topic :: {}",metaTopicName);
-			postMetaConsumer.poll(1000);
+			metaConsumer = new KafkaConsumer<>(config);
+			log.info("Meta Consumer created.");		
+			metaConsumer.subscribe(Arrays.asList(metaTopicName));
+			log.info("Meta Consumer subscrbed for topic :: {}",metaTopicName);
+			metaConsumer.poll(1000);
 			log.info("performed intial poll to complet the partition assignment with meta consumer object.");
 			
 		}
 		catch (Exception e) {
-			log.error("Exception occured while initializing the Post Meta Manager.");
+			log.error("Exception occured while initializing the Meta Manager.");
 			throw e;
 		}
 
@@ -60,15 +61,15 @@ public class PostMetaManagerTask implements Runnable{
 	public void run() {
 		
 		try {
-			log.info("==================== Post meta manager task starts here. time : {} ==============================",LocalDateTime.now());
+			log.info("==================== Meta manager task starts here. time : {} ==============================",LocalDateTime.now());
 			
-			Set<TopicPartition> partitions = postMetaConsumer.assignment();
+			Set<TopicPartition> partitions = metaConsumer.assignment();
 			log.info("Partition allocated is :: {}",partitions);
 			if(!partitions.isEmpty()) {
-				postMetaConsumer.seekToEnd(partitions);
-				log.info("Post Meta Consumer moves the head to the end.");
+				metaConsumer.seekToEnd(partitions);
+				log.info("Meta Consumer moves the head to the end.");
 				TopicPartition metaTopicPartition = partitions.iterator().next();
-				Long offset = postMetaConsumer.position(metaTopicPartition);
+				Long offset = metaConsumer.position(metaTopicPartition);
 				log.info("Current end offset details. Offset :: {}", offset);
 				if(offset == 0) {
 					publishInitialRecord();
@@ -78,11 +79,11 @@ public class PostMetaManagerTask implements Runnable{
 				}	
 			}
 			
-			log.info("==================== Post meta manager task ends here. time : {} ==============================",LocalDateTime.now());
+			log.info("==================== Meta manager task ends here. time : {} ==============================",LocalDateTime.now());
 			
 		}
 		catch (Exception e) {
-			log.error("Exception occured while managing the Post Meta Topic Producer and consumer. Exception :: ", e);
+			log.error("Exception occured while managing the Meta Topic Producer and consumer. Exception :: ", e);
 			
 		}
 		
@@ -92,15 +93,15 @@ public class PostMetaManagerTask implements Runnable{
 		
 		try {
 			
-			postMetaConsumer.seek(metaTopicPartition, (offset-1));
+			metaConsumer.seek(metaTopicPartition, (offset-1));
 			log.info("moving the head to the last record");
-			ConsumerRecords<String, String> records = postMetaConsumer.poll(1000);
+			ConsumerRecords<String, String> records = metaConsumer.poll(1000);
 			log.info("Last record is fetched");
 			if(records.count() == 1) {
 				ConsumerRecord<String, String> record = records.iterator().next();
 				log.info("Last record Value :: {}, offset position :: {}",record.value(),record.offset());
 				boolean insertFlag = false;
-				PostMetaModel model = PostMetaModelMapper.mapToPostMetaModel(record.value());
+				MetaModel model = PostMetaModelMapper.mapToPostMetaModel(record.value());
 				int currentDayCount = Integer.parseInt(CollectorConfigUtil.getProperties().getProperty("collector.post.meta.day.count"));
 				if(model.getDayCount() < currentDayCount) {
 					model.setDayCount(model.getDayCount() + 1);
@@ -119,8 +120,12 @@ public class PostMetaManagerTask implements Runnable{
 				log.info("New record is ready to publish. record :: {}",model.toString());
 				
 				if(insertFlag) {
-					postMetaProducer.send(new ProducerRecord<String, String>(metaTopicName, PostMetaModelMapper.mapPostMetaModelToValue(model)));
-					log.info("New record is published ");
+					for(String metaType : metaTypes) {
+						model.setMetaType(metaType);
+						metaProducer.send(new ProducerRecord<String, String>(metaTopicName, PostMetaModelMapper.mapPostMetaModelToValue(model)));
+						log.info("New record is published details :: {} ",model.toString());
+					}
+					
 				}
 				
 			}
@@ -140,16 +145,21 @@ public class PostMetaManagerTask implements Runnable{
 		
 		try {
 			
-			PostMetaModel model = new PostMetaModel();
-			model.setDayCount(1);
-			model.setPageNumber(1);
-			model.setTime(new Date().getTime());
-			log.info("No record found. publishing the initial record. record :: {}", model.toString());
-			postMetaProducer.send(new ProducerRecord<String, String>(metaTopicName, PostMetaModelMapper.mapPostMetaModelToValue(model)));
+			for(String metaType : metaTypes) {
+				MetaModel model = new MetaModel();
+				model.setDayCount(1);
+				model.setPageNumber(1);
+				model.setTime(new Date().getTime());
+				model.setMetaType(metaType);
+				log.info("No record found. publishing the initial record. record :: {}", model.toString());
+				metaProducer.send(new ProducerRecord<String, String>(metaTopicName, PostMetaModelMapper.mapPostMetaModelToValue(model)));
+			}
+			
+			
 			
 		}
 		catch (Exception e) {
-			log.info("Exception occured while publishing the Intial record.");
+			log.info("Exception occured while publishing the Intial records.");
 			throw e;
 		}
 		

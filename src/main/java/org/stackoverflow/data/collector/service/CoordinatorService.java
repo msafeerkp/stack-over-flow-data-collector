@@ -19,8 +19,8 @@ public class CoordinatorService {
 		try {
 			
 			log.info("=========================== Cordinator Service started. ==============================================");
-			PostMetaService.getInstance().start();
-			PostService.getInstance().start();
+			MetaService.getInstance().start();
+			DataService.getInstance().start();
 			log.info("=========================== Cordinator Service end here. ==============================================");
 			
 		}

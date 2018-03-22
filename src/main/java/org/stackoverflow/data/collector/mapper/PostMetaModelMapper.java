@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.stackoverflow.data.collector.model.PostMetaModel;
+import org.stackoverflow.data.collector.model.MetaModel;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -17,13 +17,13 @@ public class PostMetaModelMapper {
 	
 	private static Logger log = LoggerFactory.getLogger(PostMetaModelMapper.class);
 	
-	public static PostMetaModel mapToPostMetaModel(String metaModelString) throws Exception{
+	public static MetaModel mapToPostMetaModel(String metaModelString) throws Exception{
 		
 		log.debug("String to model convertion started . time :: {}",LocalDateTime.now());
 		ObjectMapper objectMapper = new ObjectMapper();
-		PostMetaModel model = null;
+		MetaModel model = null;
 		try {
-			model = objectMapper.readValue(metaModelString, PostMetaModel.class);
+			model = objectMapper.readValue(metaModelString, MetaModel.class);
 		}
 		catch (Exception e) {
 			log.error("Exception occured while convertion json to object.");
@@ -34,7 +34,7 @@ public class PostMetaModelMapper {
 		
 	}
 	
-	public static String mapPostMetaModelToValue(PostMetaModel model) throws Exception{
+	public static String mapPostMetaModelToValue(MetaModel model) throws Exception{
 		
 		log.debug("Model to String convertion started . time :: {}",LocalDateTime.now());
 		ObjectMapper objectMapper = new ObjectMapper();

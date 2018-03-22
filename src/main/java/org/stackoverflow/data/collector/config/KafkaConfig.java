@@ -39,7 +39,7 @@ public class KafkaConfig {
 		
 		 Properties collectorProps = CollectorConfigUtil.getProperties();
 		 Map<String, Object> config = getCommonConfig();
-		// config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, collectorProps.getProperty("collector.kafka.enable.auto.commit"));
+		config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, collectorProps.getProperty("collector.kafka.enable.auto.commit"));
 		// config.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, collectorProps.getProperty("collector.kafka.auto.commit.interval.ms"));
 		 config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, collectorProps.getProperty("collector.kafka.key.deserializer"));
 		 config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, collectorProps.getProperty("collector.kafka.value.deserializer"));

@@ -10,35 +10,35 @@ import org.stackoverflow.data.collector.lock.DistributedLock;
 import org.stackoverflow.data.collector.task.meta.PostMetaManagerTask;
 import org.stackoverflow.data.collector.utils.CollectorConfigUtil;
 
-public class PostMetaService {
+public class MetaService {
 	
 	private Logger log = LoggerFactory.getLogger(this.getClass());
-	private static final PostMetaService POST_META_SERVICE = new PostMetaService();
+	private static final MetaService POST_META_SERVICE = new MetaService();
 	
-	public static PostMetaService getInstance() {
+	public static MetaService getInstance() {
 		return POST_META_SERVICE;
 	}
 
 	public void start() {
 		
-		log.info(" ============================== Post Meta Service started ===================================");
+		log.info(" ============================== Meta Service started ===================================");
 		
 		try {
 			
 			DistributedLock.acquireLock();
 			if(DistributedLock.hasLock()) {
-				String postMetaTopicName = CollectorConfigUtil.getProperties().getProperty("collector.post.meta.topic.name");
-				Thread postMetaProducer = new Thread(new PostMetaManagerTask(postMetaTopicName));
+				String metaTopicName = CollectorConfigUtil.getProperties().getProperty("collector.post.meta.topic.name");
+				Thread metaProducer = new Thread(new PostMetaManagerTask(metaTopicName));
 				ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
-				executorService.scheduleAtFixedRate(postMetaProducer, 60, 5, TimeUnit.SECONDS);
+				executorService.scheduleAtFixedRate(metaProducer, 40, 5*40, TimeUnit.SECONDS);
 			}
 			
 		}
 		catch (Exception e) {
-			log.error("Exception occured while starting the Post Meta Service. Exception :: ",e);
+			log.error("Exception occured while starting the Meta Service. Exception :: ",e);
 		}
 		
-		log.info(" ============================== Post Meta Service ends here. ===================================");
+		log.info(" ============================== Meta Service ends here. ===================================");
 		
 	}
 
