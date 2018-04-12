@@ -2,6 +2,7 @@ package org.stackoverflow.data.collector.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.stackoverflow.data.collector.lock.DistributedLock;
 
 public class CoordinatorService {
 	
@@ -19,8 +20,13 @@ public class CoordinatorService {
 		try {
 			
 			log.info("=========================== Cordinator Service started. ==============================================");
-			MetaService.getInstance().start();
-			DataService.getInstance().start();
+			log.info("Trying to acquire the distributed lock.");
+			DistributedLock.acquireLock();
+			if(DistributedLock.hasLock()) {
+				MetaService.getInstance().start();
+				DataService.getInstance().start();
+			}
+			
 			log.info("=========================== Cordinator Service end here. ==============================================");
 			
 		}

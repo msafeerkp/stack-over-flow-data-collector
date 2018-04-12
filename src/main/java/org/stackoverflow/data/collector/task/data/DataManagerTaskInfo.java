@@ -28,7 +28,7 @@ public class DataManagerTaskInfo {
 			dataProducer = new KafkaProducer<>(KafkaConfig.getProducerConfig());
 			log.info("Data Producer created.");
 			Map<String, Object> config = KafkaConfig.getConsumerConfig();
-			config.put(ConsumerConfig.GROUP_ID_CONFIG, "post-manager");
+			config.put(ConsumerConfig.GROUP_ID_CONFIG, "data-manager");
 			metaConsumer = new KafkaConsumer<>(config);
 			log.info("Meta Consumer created.");
 			metaConsumer.subscribe(Arrays.asList(metaTopicName));

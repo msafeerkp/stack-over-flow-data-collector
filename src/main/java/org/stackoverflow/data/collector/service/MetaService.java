@@ -25,13 +25,10 @@ public class MetaService {
 		
 		try {
 			
-			DistributedLock.acquireLock();
-			if(DistributedLock.hasLock()) {
-				String metaTopicName = CollectorConfigUtil.getProperties().getProperty("collector.post.meta.topic.name");
-				Thread metaProducer = new Thread(new PostMetaManagerTask(metaTopicName));
-				ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
-				executorService.scheduleAtFixedRate(metaProducer, 40, 5*40, TimeUnit.SECONDS);
-			}
+			String metaTopicName = CollectorConfigUtil.getProperties().getProperty("collector.post.meta.topic.name");
+			Thread metaProducer = new Thread(new PostMetaManagerTask(metaTopicName));
+			ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+			executorService.scheduleAtFixedRate(metaProducer, 40, 5*40, TimeUnit.SECONDS);
 			
 		}
 		catch (Exception e) {

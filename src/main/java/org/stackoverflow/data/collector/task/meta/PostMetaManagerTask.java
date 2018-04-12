@@ -41,7 +41,7 @@ public class PostMetaManagerTask implements Runnable{
 			metaProducer = new KafkaProducer<>(KafkaConfig.getProducerConfig());
 			log.info("Meta Producer created.");
 			Map<String, Object> config = KafkaConfig.getConsumerConfig();
-			config.put(ConsumerConfig.GROUP_ID_CONFIG, this.getClass().getName() + " _" + this.hashCode());
+			config.put(ConsumerConfig.GROUP_ID_CONFIG, "meta-manager");
 			metaConsumer = new KafkaConsumer<>(config);
 			log.info("Meta Consumer created.");		
 			metaConsumer.subscribe(Arrays.asList(metaTopicName));
